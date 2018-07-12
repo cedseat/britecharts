@@ -462,7 +462,7 @@ define(function(require){
             let range = colorScale.range();
 
             topicColorMap = colorScale.domain().reduce((memo, item, i) => {
-                memo[item] = range[i];
+                memo[item] = range[i%range.length];
 
                 return memo;
             }, {});

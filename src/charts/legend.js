@@ -141,12 +141,37 @@ define(function(require){
          * @private
          */
         function adjustLines() {
-            let lineWidth = svg.select('.legend-line').node().getBoundingClientRect().width + markerSize;
+            /*let lineWidth = svg.select('.legend-line').node().getBoundingClientRect().width + markerSize;
             let lineWidthSpace = chartWidth - lineWidth;
 
+            let legendEntries = svg.selectAll('.legend-entry');
+
+            let lineIndex = 0;
+            let currentLine = addNewLine(lineIndex);
+
+
+            legendEntries.each(function () {
+                currentLine.append(() => this);
+            })
+
+            let numberOfEntries = legendEntries.size();
+            console.log(numberOfEntries);
+
+            let lastEntry = legendEntries.filter(`:nth-child(${numberOfEntries})`);
+
+            //lastEntry.attr('transform', `translate(${markerSize},0)`);
+            //newLine.append(() => lastEntry.node());*/
+
+
+            /*
+
             if (lineWidthSpace <= 0) {
+                console.log(lineWidthSpace);
                 splitInLines();
-            }
+                lineWidth = svg.select('.legend-line').node().getBoundingClientRect().width + markerSize;
+                lineWidthSpace = chartWidth - lineWidth;
+                console.log(lineWidthSpace);
+            }*/
 
             centerLegendOnSVG();
         }
@@ -158,12 +183,12 @@ define(function(require){
          */
         function buildContainerGroups() {
             let container = svg
-              .append('g')
+                .append('g')
                 .classed('legend-container-group', true)
                 .attr('transform', `translate(${margin.left},${margin.top})`);
 
             container
-              .append('g')
+                .append('g')
                 .classed('legend-group', true);
         }
 
@@ -185,7 +210,7 @@ define(function(require){
         function buildSVG(container) {
             if (!svg) {
                 svg = d3Selection.select(container)
-                  .append('svg')
+                    .append('svg')
                     .classed('britechart britechart-legend', true);
 
                 buildContainerGroups();
@@ -207,7 +232,7 @@ define(function(require){
 
             if (emptySpace > 0) {
                 svg.select('g.legend-container-group')
-                    .attr('transform', `translate(${emptySpace/2},0)`)
+                    .attr('transform', `translate(${emptySpace/2},${margin.top})`)
             }
         }
 
@@ -234,31 +259,36 @@ define(function(require){
 
             // We want a single line
             svg.select('.legend-group')
-              .append('g')
+                .append('g')
                 .classed('legend-line', true);
 
             // And one entry per data item
             entries = svg.select('.legend-line')
-              .selectAll('g.legend-entry')
-              .data(data);
+                .selectAll('g.legend-entry')
+                .data(data);
+
+            let lineHeight = 20,
+                verticalOffset = 5;
 
             // Enter
             entries.enter()
-              .append('g')
+                .append('g')
                 .classed('legend-entry', true)
                 .attr('data-item', getId)
                 .attr('transform', function({name}) {
-                    let horizontalOffset = xOffset,
-                        lineHeight = chartHeight / 2,
-                        verticalOffset = lineHeight,
-                        labelWidth = textHelper.getTextWidth(name, textSize);
+                    let labelWidth = textHelper.getTextWidth(name, textSize);
 
+                    if (xOffset + labelWidth > chartWidth) {
+                        xOffset = markerSize;
+                        verticalOffset += textSize * 1.66;
+                    }
+
+                    let horizontalOffset = xOffset;
                     xOffset += markerSize + 2 * getLineElementMargin() + labelWidth;
-
                     return `translate(${horizontalOffset},${verticalOffset})`;
                 })
                 .merge(entries)
-              .append('circle')
+                .append('circle')
                 .classed('legend-circle', true)
                 .attr('cx', markerSize/2)
                 .attr('cy', markerYOffset)
@@ -268,7 +298,7 @@ define(function(require){
 
             svg.select('.legend-group')
                 .selectAll('g.legend-entry')
-              .append('text')
+                .append('text')
                 .classed('legend-entry-name', true)
                 .text(getName)
                 .attr('x', getLineElementMargin())
@@ -283,7 +313,7 @@ define(function(require){
                 .style('opacity', 0)
                 .remove();
 
-            adjustLines();
+            centerLegendOnSVG();
         }
 
         /**
@@ -301,31 +331,31 @@ define(function(require){
 
             // Enter
             entries.enter()
-              .append('g')
+                .append('g')
                 .classed('legend-line', true)
-                  .append('g')
-                    .classed('legend-entry', true)
-                    .attr('data-item', getId)
-                    .attr('transform', function(d, i) {
-                        let horizontalOffset = markerSize + getLineElementMargin(),
-                            lineHeight = chartHeight/ (data.length + 1),
-                            verticalOffset = (i + 1) * lineHeight;
+                .append('g')
+                .classed('legend-entry', true)
+                .attr('data-item', getId)
+                .attr('transform', function(d, i) {
+                    let horizontalOffset = markerSize + getLineElementMargin(),
+                        lineHeight = chartHeight/ (data.length + 1),
+                        verticalOffset = (i + 1) * lineHeight;
 
-                        return `translate(${horizontalOffset},${verticalOffset})`;
-                    })
-                    .merge(entries)
-                  .append('circle')
-                    .classed('legend-circle', true)
-                    .attr('cx', markerSize/2)
-                    .attr('cy', markerYOffset)
-                    .attr('r', markerSize/2 )
-                    .style('fill', getCircleFill)
-                    .style('stroke-width', 1);
+                    return `translate(${horizontalOffset},${verticalOffset})`;
+                })
+                .merge(entries)
+                .append('circle')
+                .classed('legend-circle', true)
+                .attr('cx', markerSize/2)
+                .attr('cy', markerYOffset)
+                .attr('r', markerSize/2 )
+                .style('fill', getCircleFill)
+                .style('stroke-width', 1);
 
             svg.select('.legend-group')
                 .selectAll('g.legend-line')
                 .selectAll('g.legend-entry')
-              .append('text')
+                .append('text')
                 .classed('legend-entry-name', true)
                 .text(getName)
                 .attr('x', getLineElementMargin())
@@ -335,7 +365,7 @@ define(function(require){
             svg.select('.legend-group')
                 .selectAll('g.legend-line')
                 .selectAll('g.legend-entry')
-              .append('text')
+                .append('text')
                 .classed('legend-entry-value', true)
                 .text(getFormattedQuantity)
                 .attr('x', chartWidth - valueReservedSpace)
@@ -388,9 +418,10 @@ define(function(require){
         function splitInLines() {
             let legendEntries = svg.selectAll('.legend-entry');
             let numberOfEntries = legendEntries.size();
+            console.log(numberOfEntries);
             let lineHeight = (chartHeight / 2) * 1.7;
             let newLine = svg.select('.legend-group')
-              .append('g')
+                .append('g')
                 .classed('legend-line', true)
                 .attr('transform', `translate(0, ${lineHeight})`);
             let lastEntry = legendEntries.filter(`:nth-child(${numberOfEntries})`);
